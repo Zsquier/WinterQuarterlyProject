@@ -27,8 +27,17 @@
  * 
  * https://github.com/Zsquier/WinterQuarterlyProject
  */
-byte PROGMEM board[][];
+byte PROGMEM boardSize = 32;
+byte PROGMEM board[boardSize][boardSize];
 byte PROGMEM pins[];
+byte cursorCoords[] = {0,0};        //(x,y)
+int PROGMEM delayTime = 2000;       //Time that the board waits after an automatic reset in milliseconds
+int counter= 0;
+
+int pinUp;
+int pinDown;
+int pinLeft;
+int pinRight;
 
 // code to run once
 void setup() {
@@ -77,6 +86,7 @@ void clearBoard(){
       board[x][y]=0;
     }
   }
+  counter = 0;
 }
 
 /*
@@ -89,6 +99,7 @@ void clearBoard(){
       board[x][y]=random(0,2);
     }
   }
+  counter = 0;
  }
 
  /*
@@ -129,8 +140,77 @@ void updateBoard(){
  * Determrine Equilibrium
  * Find average values to detect when board stops changing. Check when the board enters a state of equilibrium
  */
-void determineEquilibrium(byte eSize, int counter){
+void determineEquilibrium(byte eSize){
   float Equilibrium[eSize];
-  
+  float average;
+  float sensitivity = 0.05;
+  if(countter%eSize == 0){
+    for(int i = 0; i< eSize; i++){
+      Equilibrium[i]=0;
+    }
+  }
+  for(int x = 0; x < 32; x++){
+    for(inty = 0; y < 32;y++){
+      Equilibrium[counter % eSize] += board[x][y];
+    }
+  }
+  counter++;
+  average = (Equilibrium[0] + Equilibrium[1] + Equilibrium[2] + Equilibrium[3] + Equilibrium[4]) / eSize;
+  for(int i = 0; i < eSize; i++){
+    if(abs(Equilibrium[i]-average) >= sensitivity)
+      break;
+    if(i == eSize - 1){
+      for(int i = 0; i< eSize; i++){
+        Equilibrium[i]=0;
+      }
+      delay(delayTime);
+      randomizeBoard();
+    }
+  }
 }
+
+/*
+ * MoveCursor
+ * To move the cursor around the board for user input
+ */
+void moveCursor(){
+  if(pinUp == HIGH){
+    if(cursorCoords[1] - 1 >= 0){
+      cursorCoords[1]--;
+    }
+  }
+  if(pinDown == HIGH){
+    if(cursourCoords[1] + 1 <= boardSize){
+      cursorCoords[1]++;
+    }
+  }
+  if(pinLeft == HIGH){
+    if(cursorCoords[0] - 1 >= 0){
+      cursorCoords[0]--;
+    }
+  }
+  if(pinRight == HIGH){
+    if(cursorCoords[0]+ 1 <= boardSize){
+      cursorCoordsp[0]++;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
