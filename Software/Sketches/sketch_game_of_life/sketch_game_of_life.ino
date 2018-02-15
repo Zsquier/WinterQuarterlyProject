@@ -32,12 +32,14 @@ byte PROGMEM board[boardSize][boardSize];
 byte PROGMEM pins[];
 byte cursorCoords[] = {0,0};        //(x,y)
 int PROGMEM delayTime = 2000;       //Time that the board waits after an automatic reset in milliseconds
+int PROGMEM userInputDelay = 25;    //delay after user input
 int counter= 0;
+bool userInputEnable = 0;         // 0 = autorun; 1 = user input enable
+byte eSize = 30;                  //how long the board will run after detecting equilibrium
+int pinA;
+int pinB;
+int pinC;
 
-int pinUp;
-int pinDown;
-int pinLeft;
-int pinRight;
 
 // code to run once
 void setup() {
@@ -47,7 +49,39 @@ void setup() {
 
 // code to run repeatedly
 void loop() {
-
+  case(getInput()){
+    1:moveCursor(1);    //cursor up
+      userInputEnable = 1;
+      delay(userInputDelay);
+      break;
+    2:moveCursor(2);    //cursor down
+      userInputEnable = 1;
+      delay(userInputDelay);
+      break;
+    3:moveCursor(3);    //cursor left
+      userInputEnable = 1;
+      delay(userInputDelay);
+      break;
+    4:moveCursor(4);    //cursor right
+      userInputEnable = 1;
+      delay(userInputDelay);
+      break;
+    5:toggleCell();
+      delay(userInputDelay);
+      break;
+    6:clearBoard();
+      delay(userInputDelay);
+      break;
+    7:userInputEnable = !userInputEnable;
+      delay(userInputDelay);
+      break;
+  }
+  //autorun
+  if(userInputEnable == 0){
+    determineEquilibrium();
+    updateBoard();
+    //print board to LED matrix
+  }
 
 }
 
@@ -93,7 +127,7 @@ void clearBoard(){
  * Randomize Board
  * Purpose: Set all cells to either 0 or 1
  */
- void ranodmizeBoard(){
+ void randomizeBoard(){
   for(byte x=0;x<32;x++){
     for(byte y=0;y<32;y++){
       board[x][y]=random(0,2);
@@ -140,7 +174,7 @@ void updateBoard(){
  * Determrine Equilibrium
  * Find average values to detect when board stops changing. Check when the board enters a state of equilibrium
  */
-void determineEquilibrium(byte eSize){
+void determineEquilibrium(){
   float Equilibrium[eSize];
   float average;
   float sensitivity = 0.05;
@@ -172,33 +206,64 @@ void determineEquilibrium(byte eSize){
 /*
  * MoveCursor
  * To move the cursor around the board for user input
+ * 
+ * 1 = up, 2 = down, 3 = left, 4 = right
  */
-void moveCursor(){
-  if(pinUp == HIGH){
+void moveCursor(byte select){
+  if(select == 1){
     if(cursorCoords[1] - 1 >= 0){
       cursorCoords[1]--;
     }
   }
-  if(pinDown == HIGH){
+  if(select == 2){
     if(cursourCoords[1] + 1 <= boardSize){
       cursorCoords[1]++;
     }
   }
-  if(pinLeft == HIGH){
+  if(select == 3){
     if(cursorCoords[0] - 1 >= 0){
       cursorCoords[0]--;
     }
   }
-  if(pinRight == HIGH){
+  if(select == 4){
     if(cursorCoords[0]+ 1 <= boardSize){
       cursorCoordsp[0]++;
     }
   }
 }
 
+/*
+ * ToggleCell
+ * Inverts cell state on toggle cell button press
+ */
+void toggleCell(){
+  if(board[cursorCoords[0]][cursorCoords[1]]==0)
+    board[cursorCoords[0]][cursorCoords[1]]=1;
+  else
+    board[cursorCoords[0]][cursorCoords[1]]=0;
+}
 
-
-
+/*
+ * Get Input
+ * gets input from buttons
+ */
+byte getInput(){
+  if(!digitalRead(pinA) && !digitalRead(pinB) && digitalRead(pinC))
+    return 1;   //cursor up
+  else if(!digitalRead(pinA) && digitalRead(pinB) && !digitalRead(pinC))
+    return 2;   //cursor down
+  else if(!digitalRead(pinA) && digitalRead(pinB) && digitalRead(pinC))
+    return 3;   //cursor left
+  else if(digitalRead(pinA) && !digitalRead(pinB) && !digitalRead(pinC))
+    return 4;   //cursor right
+  else if(digitalRead(pinA) && !digitalRead(pinB) && digitalRead(pinC))
+    return 5;   //toggle cell
+  else if(digitalRead(pinA) && digitalRead(pinB) && !digitalRead(pinC))
+    return 6;   //clear board
+  else if(digitalRead(pinA) && digitalRead(pinB) && digitalRead(pinC))
+    return 7;   //toggle user input/auto run
+  else return 0;  //000 do nothing
+}
 
 
 
