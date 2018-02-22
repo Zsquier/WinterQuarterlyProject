@@ -27,6 +27,20 @@
  * 
  * https://github.com/Zsquier/WinterQuarterlyProject
  */
+#include <Adafruit_GFX.h>   // Core graphics library
+#include <RGBmatrixPanel.h> // Hardware-specific library
+#include <avr/pgmspace.h> 
+
+#define CLK 8  // MUST be on PORTB! (Use pin 11 on Mega)
+#define OE  9
+#define LAT 10
+#define A   A0
+#define B   A1
+#define C   A2
+#define D   A3
+
+RGBmatrixPanel matrix(A, B, C, D, CLK, LAT, OE, false);
+ 
 byte PROGMEM boardSize = 32;
 byte PROGMEM board[boardSize][boardSize];
 byte PROGMEM pins[];
@@ -43,7 +57,7 @@ int pinC;
 
 // code to run once
 void setup() {
-    
+      matrix.begin();
 
 }
 
@@ -265,7 +279,24 @@ byte getInput(){
   else return 0;  //000 do nothing
 }
 
-
+void drawBoard(byte board)
+{
+  for(int i =0; i<boardSize; i++)
+  {
+    for(int j=0; j<boardSize; j++)
+    {
+      if(board[i][j])
+      {
+        matrix.drawPixel(i, j, matrix.ColorHSV(255, 255, 255, true));
+      }
+      else
+      {
+        matrix.drawPixel(i, j, matrix.ColorHSV(0, 0, 0, true));
+      }
+    }
+  }
+  
+}
 
 
 
