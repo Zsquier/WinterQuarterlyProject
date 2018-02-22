@@ -27,52 +27,72 @@
  * 
  * https://github.com/Zsquier/WinterQuarterlyProject
  */
-byte PROGMEM boardSize = 32;
-byte PROGMEM board[boardSize][boardSize];
-byte PROGMEM pins[];
+#include <Adafruit_GFX.h>   // Core graphics library
+#include <RGBmatrixPanel.h> // Hardware-specific library
+#include <avr/pgmspace.h> 
+
+#define CLK 8  // MUST be on PORTB! (Use pin 11 on Mega)
+#define OE  9
+#define LAT 10
+#define A   A0
+#define B   A1
+#define C   A2
+#define D   A3
+
+const byte boardSize = 32;
+byte board[boardSize][boardSize];
+//byte PROGMEM pins[];
 byte cursorCoords[] = {0,0};        //(x,y)
-int PROGMEM delayTime = 2000;       //Time that the board waits after an automatic reset in milliseconds
-int PROGMEM userInputDelay = 25;    //delay after user input
+int delayTime = 2000;       //Time that the board waits after an automatic reset in milliseconds
+int userInputDelay = 25;    //delay after user input
 int counter= 0;
 bool userInputEnable = 0;         // 0 = autorun; 1 = user input enable
 byte eSize = 30;                  //how long the board will run after detecting equilibrium
 int pinA;
 int pinB;
 int pinC;
+const short reset=1000;
 
+RGBmatrixPanel matrix(A, B,C, D, CLK, LAT, OE, false);
+static const int dim = 32;
+static const int Red[] = {20, 0, 78, 0};
+static const int Grn[] = {20, 0, 80, 0};
+static const int Blu[] = {20, 68, 190, 120};
 
 // code to run once
 void setup() {
-    
+    matrix.begin();
+    Serial.begin(9600);
 
 }
 
 // code to run repeatedly
 void loop() {
-  case(getInput()){
-    1:moveCursor(1);    //cursor up
+
+  switch(getInput()){
+    case 1:moveCursor(1);    //cursor up
       userInputEnable = 1;
       delay(userInputDelay);
       break;
-    2:moveCursor(2);    //cursor down
+    case 2:moveCursor(2);    //cursor down
       userInputEnable = 1;
       delay(userInputDelay);
       break;
-    3:moveCursor(3);    //cursor left
+    case 3:moveCursor(3);    //cursor left
       userInputEnable = 1;
       delay(userInputDelay);
       break;
-    4:moveCursor(4);    //cursor right
+    case 4:moveCursor(4);    //cursor right
       userInputEnable = 1;
       delay(userInputDelay);
       break;
-    5:toggleCell();
+    case 5:toggleCell();
       delay(userInputDelay);
       break;
-    6:clearBoard();
+    case 6:clearBoard();
       delay(userInputDelay);
       break;
-    7:userInputEnable = !userInputEnable;
+    case 7:userInputEnable = !userInputEnable;
       delay(userInputDelay);
       break;
   }
@@ -80,6 +100,7 @@ void loop() {
   if(userInputEnable == 0){
     determineEquilibrium();
     updateBoard();
+    drawBoard();
     //print board to LED matrix
   }
 
@@ -164,8 +185,8 @@ void updateBoard(){
         boardNew[x][y] = 0;
     }
   }
-  for(x=0;x<32;x++){
-    for(y=0;y<32;y++){
+  for(byte x=0;x<32;x++){
+    for(byte y=0;y<32;y++){
       board[x][y] = boardNew[x][y];
     }
   }
@@ -178,13 +199,13 @@ void determineEquilibrium(){
   float Equilibrium[eSize];
   float average;
   float sensitivity = 0.05;
-  if(countter%eSize == 0){
+  if(counter%eSize == 0){
     for(int i = 0; i< eSize; i++){
       Equilibrium[i]=0;
     }
   }
   for(int x = 0; x < 32; x++){
-    for(inty = 0; y < 32;y++){
+    for(int y = 0; y < 32;y++){
       Equilibrium[counter % eSize] += board[x][y];
     }
   }
@@ -201,6 +222,9 @@ void determineEquilibrium(){
       randomizeBoard();
     }
   }
+  if(counter == reset){
+    randomizeBoard();
+  }
 }
 
 /*
@@ -216,7 +240,7 @@ void moveCursor(byte select){
     }
   }
   if(select == 2){
-    if(cursourCoords[1] + 1 <= boardSize){
+    if(cursorCoords[1] + 1 <= boardSize){
       cursorCoords[1]++;
     }
   }
@@ -227,7 +251,7 @@ void moveCursor(byte select){
   }
   if(select == 4){
     if(cursorCoords[0]+ 1 <= boardSize){
-      cursorCoordsp[0]++;
+      cursorCoords[0]++;
     }
   }
 }
@@ -247,7 +271,7 @@ void toggleCell(){
  * Get Input
  * gets input from buttons
  */
-byte getInput(){
+static byte getInput(){
   if(!digitalRead(pinA) && !digitalRead(pinB) && digitalRead(pinC))
     return 1;   //cursor up
   else if(!digitalRead(pinA) && digitalRead(pinB) && !digitalRead(pinC))
@@ -265,7 +289,23 @@ byte getInput(){
   else return 0;  //000 do nothing
 }
 
-
+void drawBoard()
+{
+  for(byte i =0; i<boardSize; i++)
+  {
+    for(byte j=0; j<boardSize; j++)
+    {
+      if(board[i][j]==1)
+      {
+        matrix.drawPixel(i, j, matrix.ColorHSV(255, 255, 255, true));
+      }
+      else
+      {
+        matrix.drawPixel(i, j, matrix.ColorHSV(0, 0, 0, true));
+      }
+    }
+  }
+}
 
 
 
